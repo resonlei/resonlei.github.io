@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="theme-color" content=#58b77a>
+  <title>git reset&amp;git revert 使用 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <script id="hexo-configurations">
+  var CONFIG = {
+    root: '/',
+    theme: 'lx',
+    version: '0.3.9',
+    localsearch:{
+      "enable": false,
+      "trigger": "auto",
+      "top_n_per_article": 1,
+      "unescape": false,
+      "preload": false
+      },
+    path: 'null'
+  };
+</script>
+
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/css/main.min.css">
+  <style type="text/css">
+    pre,
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    html {
+      font-family: sans-serif;
+    }
+    body {
+      font-family: sans-serif;
+    }
+    h1, h2, h3, h4, h5, figure {
+      font-family: sans-serif;
+    }
+    .menu-container{
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script src="//cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.jside.menu.js"></script>
+	<script>
+	$(document).ready(function(){
+	$(".menu-container").jSideMenu({
+	    jSidePosition: "position-right",
+	    jSideSticky: true,
+	    jSideSkin: "greenish",
+	     });
+	}); 
+	</script>
+  
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Fira Code:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body>
+<div class="single">
+
+<div id="page">
+<div id="lx-aside" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/post_cover.jpeg)" data-stellar-background-ratio="0.5">
+  <div class="overlay">
+  <div class="page-title">
+    <div class="avatar"><a href="/"><img src="/images/avatar.jpeg"></a></div>
+    <span>2019-04-18</span>
+    <h2>git reset&gi...</h2>
+    <div class="tags"><i class="fa fa-tag"></i><a class="tag-link" href="/tags/git/" rel="tag">git</a></div>
+    </div>
+</div>
+</div>
+
+<div id="lx-main-content">
+  <div class="lx-post">
+    <div class="lx-entry padding">
+      <div>
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>不管在工作还是个人开发的使用中，或多或少的我们都会接触到git的使用。但是，人非圣贤，总有犯错误的时候，写错代码，提交错误的代码也是在所难免的事情。</p>
+<p>但是，不用着急！版本控制工具GIT在设计的时候就给开发者们设计了“后悔药”。当然，如果版本控制连这种功能都没有的话，也就可以淘汰了，好的，废话不多说，接下来就来介绍今天的主角：<code>git reset</code>跟<code>git revert</code>的使用以及区别！</p>
+<a id="more"></a>
+<h3 id="博主经历"><a href="#博主经历" class="headerlink" title="博主经历"></a>博主经历</h3><p>我是因为在有一次工作的时候因为自己的粗心，在服务器上面修改代码准备验证，不小心将修改commit了（没有push到远程分支），然后。准备编译一个新的版本（编译版本的时候脚本会从远程pull代码），来确定问题的所在点，但是在远程分支上面，有人已经提交了问题所在的代码，这样导致我编译出来的版本因为我的本地commit导致了修改了正确的代码！因为已经commit了，脚本执行的<code>git clean -df</code>也不能清除！当时也没有仔细的看编译log。后面就重新回退了代码，重新pull服务器的代码重新编译，也算是没有出什么大问题，后来，就对git的代码回退总结了一下，记录分享！</p>
+<h3 id="共同点"><a href="#共同点" class="headerlink" title="共同点"></a>共同点</h3><p>大家都知道，这两个语句都是用来回退代码的，可以回退我们之前的提交。语法的格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git revert &lt;commit_id&gt;</span><br><span class="line">git reset --hard &lt;commit_id&gt;</span><br><span class="line">git reset [--soft] &lt;commit_id&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="区别（重点）"><a href="#区别（重点）" class="headerlink" title="区别（重点）"></a>区别（重点）</h3><h4 id="两者之间的比较"><a href="#两者之间的比较" class="headerlink" title="两者之间的比较"></a>两者之间的比较</h4><p>虽然说<code>git revert</code>跟<code>git reset</code>都是用来回退代码的，但是真正在功能上面名副其实回退代码的应该是<code>git reset</code>命令。当我们执行<code>git revert</code>之后，其实整个分支的节奏是向前的，也就是说会产生一次新的提交，只不过这次提交是与对应<commit_id>改动相反的提交，而且一般来说revert是‘回退’一次提交，例如：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTcwMzI3MTcwOTA2Nzgy?x-oss-process=image/format,png" alt="git_revert1"></p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTcwMzI3MTcwOTU2ODY2?x-oss-process=image/format,png" alt="git_revert2"><br>从上面的测试可以看出，结果完全符合我们的预期，所以说revert只是功能上面实现了看起来的‘回退’代码，实际是通过新的提交来覆盖之前的修改，接下来我们看看reset是如何操作的：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTcwMzI3MTcxMDU2MjY5?x-oss-process=image/format,png" alt="git_reset1"></p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTcwMzI3MTcxMTU1NjE4?x-oss-process=image/format,png" alt="git_resvet2"></p>
+<p>从上面的测试可以看出，结果完全符合我们的预期，所以说reset才是真正意义上面的代码回退，因为在执行过完<code>git reset</code>指令之后我们用<code>git log</code>去查看提交日志的时候，发现reset之前的提交已经不见了！实现了真正的代码回退，而且reset回退的是一个区间的的所有提交！</p>
+<p>所以，如果我们要回退的是一个commit可能是很久以前的提交，那么肯定使用使用revert来进行操作的，但是如果我们是要回退最新一条的提交或者说是最新的提交到以前的一次提交，那么无疑选择reset是最便捷也更加优雅的方法！</p>
+<h4 id="git-reset的使用参数作用比较"><a href="#git-reset的使用参数作用比较" class="headerlink" title="git reset的使用参数作用比较"></a>git reset的使用参数作用比较</h4><p>讲到这里，可能就会有疑问，既然reset直接把提交都删除掉了，那如果我reset错误了一个，那不是闯下了滔天大祸了啊！哈哈，你错了，不要紧，git是可以强行去恢复reset的内容的！</p>
+<p>看上面的测试，我在reset的时候添加了–hard的参数，因为快速的reset不经过staged暂存，这种情况的话需要强行才能恢复reset过的内容，但是，如果我们不添加参数或者说添加–soft参数（这两种情况类似）的话，git会把reset操作之后的内容暂存起来，修改如下：</p>
+<p>在<code>git reset --soft &lt;commit_id&gt;</code>之后的git status:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ git status .</span><br><span class="line">On branch master</span><br><span class="line">Your branch is behind &#39;origin&#x2F;master&#39; by 1 commit, and can be fast-forwarded.</span><br><span class="line">  (use &quot;git pull&quot; to update your local branch)</span><br><span class="line">Changes to be committed:</span><br><span class="line">  (use &quot;git reset HEAD &lt;file&gt;...&quot; to unstage)</span><br><span class="line"></span><br><span class="line">        modified:   README.md</span><br></pre></td></tr></table></figure>
+<p>在这种情况下面，如果我们需要确认我们的reset操作的话，我们需要执行<code>git reset HEAD &lt;file&gt;...</code>,执行完毕之后会变成下面不添加任何参数的这种情况，然后在执行<code>git checkout .</code>来取消reset产生的修改操作。<br>在<code>git reset &lt;commit_id&gt;</code>之后的状态:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">resonLei@resonLei-PC MINGW64 &#x2F;d&#x2F;new_website_ssh&#x2F;my_website (master)</span><br><span class="line">$ git reset 3c4abef54d2a63d0e3db440f6816085d27987b57</span><br><span class="line">Unstaged changes after reset:</span><br><span class="line">M       README.md</span><br><span class="line"></span><br><span class="line">resonLei@resonLei-PC MINGW64 &#x2F;d&#x2F;new_website_ssh&#x2F;my_website (master)</span><br><span class="line">$ git status .</span><br><span class="line">On branch master</span><br><span class="line">Your branch is behind &#39;origin&#x2F;master&#39; by 1 commit, and can be fast-forwarded.</span><br><span class="line">  (use &quot;git pull&quot; to update your local branch)</span><br><span class="line">Changes not staged for commit:</span><br><span class="line">  (use &quot;git add &lt;file&gt;...&quot; to update what will be committed)</span><br><span class="line">  (use &quot;git checkout -- &lt;file&gt;...&quot; to discard changes in working directory)</span><br><span class="line"></span><br><span class="line">        modified:   README.md</span><br><span class="line"></span><br><span class="line">no changes added to commit (use &quot;git add&quot; and&#x2F;or &quot;git commit -a&quot;)</span><br></pre></td></tr></table></figure>
+<h4 id="reset使用总结分析"><a href="#reset使用总结分析" class="headerlink" title="reset使用总结分析"></a>reset使用总结分析</h4><p>总结：通过操作的日志可以看出，我们在执行玩reset操作之后，git会认为我们的代码回到了reset对应<commit_id>版本，但是，因为本地的代码是reset之前最新的，所以如果不添加–hard参数的话，通过<code>git status  .</code>命令会出现有修改的情况，因为本地的代码跟reset之后的代码存在差异，系统没有直接删除这些内容，而是把这些内容当成了修改。当然，这个修改就是从reset对应<commit_id>reset之前的修改，如果你不需要reset的话，重新add然后commit就可以了，如果你依然执行reset之后的结果，执行<code>git checkout .</code>就可以了，下面为执行不带参数后的reset之后的<code>git diff</code>的结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">resonLei@resonLei-PC MINGW64 &#x2F;d&#x2F;new_website_ssh&#x2F;my_website (master)</span><br><span class="line">$ git diff</span><br><span class="line">diff --git a&#x2F;README.md b&#x2F;README.md</span><br><span class="line">index 9eea745..7386e7f 100644</span><br><span class="line">--- a&#x2F;README.md</span><br><span class="line">+++ b&#x2F;README.md</span><br><span class="line">@@ -21,4 +21,4 @@</span><br><span class="line"> ### 聊天室模块</span><br><span class="line"> &amp;emsp;&amp;emsp;使用中的建议聊天功能的实现，主要通过插入和读取数据库的建议操作，定时刷新来实现的，实现增量增加聊天数据！待学习完善！</span><br><span class="line"></span><br><span class="line">-</span><br><span class="line">+test git reset</span><br></pre></td></tr></table></figure>
+
+<p>可以看出来的是，本来test git reset这个字段在文件里面是存在的，在我reset到他不存在的地方的时候，<code>git diff</code>显示我们添加了这个字段，表示我们现在git的版本里面已经没有了这一字段，但是系统目前认为你修改了，这个时候你可以采取对应的操作执行即可！</p>
+<h4 id="git-reset的提交恢复"><a href="#git-reset的提交恢复" class="headerlink" title="git reset的提交恢复"></a>git reset的提交恢复</h4><p>讲到这里，大概能能够了解这两个命令的基本操作了。但是可能你又会问，如果我reset成功了！也就是使用了–hard参数之后的效果。那么如果现在我发现自己弄错了需要怎么办呢？<br>最简单的方法就是如果你的远程分支的代码还没更改的话，直接使用<code>git pull</code>就可以了！如果远程分支也跟本地修改的同步了，那么我们可以使用reset命令才重新的回退回去！但是重点就是你必须知道之前的commit id！知道的话直接reset回去就可以了，操作跟上面的基本一致！</p>
+<p>PS.代码无价，不想加班，谨慎操作！如果有其他更好的方法回退，留言告知我吧！</p>
+<h4 id="远程分支的reset使用"><a href="#远程分支的reset使用" class="headerlink" title="远程分支的reset使用"></a>远程分支的reset使用</h4><p>如果要把本地reset之后的代码提交上去，如果直接使用<code>git push</code>命令是不行的，会提示以下的错误，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">resonLei@resonLei-PC MINGW64 &#x2F;d&#x2F;new_website_ssh&#x2F;my_website (master)</span><br><span class="line">$ git push</span><br><span class="line">To git.oschina.net:Mr.Lei&#x2F;my_website.git</span><br><span class="line"> ! [rejected]        master -&gt; master (non-fast-forward)</span><br><span class="line">error: failed to push some refs to &#39;git@git.oschina.net:Mr.Lei&#x2F;my_website.git&#39;</span><br><span class="line">hint: Updates were rejected because the tip of your current branch is behind</span><br><span class="line">hint: its remote counterpart. Integrate the remote changes (e.g.</span><br><span class="line">hint: &#39;git pull ...&#39;) before pushing again.</span><br><span class="line">hint: See the &#39;Note about fast-forwards&#39; in &#39;git push --help&#39; for details.</span><br></pre></td></tr></table></figure>
+<p>这个时候我们需要在后面加上参数，例如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git push --force</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>讲到这里基本上revert跟reset我的理解就到这里了。掌握了这两个命令，可以说在git的世界里面也就不怕什么，大不了就会回退呗！谁用谁知道<del>~</del></p>
+<h3 id="最后再说说"><a href="#最后再说说" class="headerlink" title="最后再说说"></a>最后再说说</h3><h4 id="几个GIT常用命令介绍"><a href="#几个GIT常用命令介绍" class="headerlink" title="几个GIT常用命令介绍"></a>几个GIT常用命令介绍</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git show &lt;commit_id&gt;   查看对应的修改</span><br><span class="line">git log -p filename    查看对应文件的修改历史日志</span><br><span class="line">git chekcout .         撤销还没有添加的修改</span><br><span class="line">git clean -df          清理工作目录，删除没有添加的文件等</span><br><span class="line">git stash			   暂存工作内容，可以把修改了没有commit的内容保存起来</span><br><span class="line">git stash pop		   等待工作完成之后可以把存起来的工作恢复</span><br></pre></td></tr></table></figure>
+
+<h4 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h4><p>本文只代表个人见解，有很多不清楚和不正确的地方，欢迎纠正修改，共同进步！</p>
+<p><strong>我的个人网站，更多文章分享<a href="http://resonlei.top" target="_blank" rel="noopener">点击吧！</a></strong></p>
+
+      </div>
+    </div>
+  </div>
+</div>
+<div class="lx-navigation">
+	<div class="lx-cover prev lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-l.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="#">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Next</span>
+						<h3>No newer post</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+        <div class="lx-cover next lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-r.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="#">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Prev</span>
+						<h3>No older post</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+</div>
+
+</div>
+
+<footer>
+  <div>
+  Copyright &copy; 2019.<a href="/">Hexo</a><br>Powered by <a href="https://hexo.io" target="_blank">Hexo</a> | Theme <a href="https://lx.js.org" target="_blank">Lx</a><br>
+  </div>
+</footer>
+
+</div>
+
+<button class="hamburger hamburger--arrow-r" type="button">
+    <div class="hamburger-box">
+      <div class="hamburger-inner"></div>
+    </div>
+</button> 
+<div class="menu visibility">
+  <div class="menu-head">
+    <span class="layer">
+      <div class="col">
+        <div class="row for-pic">
+          <div class="profile-pic">
+            <a href="/"><img src="/images/avatar.jpeg" alt="John Doe"/></a>
+          </div>
+        </div>
+        <div class="row for-name">
+          <p>John Doe</p>
+          <span class="tagline">Hello, World!</span>
+        </div>
+      </div>
+    </span>
+  </div>
+  <nav class="menu-container">
+  <ul class="menu-items">
+    <li><a href="/"><i class="fa fa-home fa-fw"></i>Home</a></li>
+    <li><a href="/archives/"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+    
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-bookmark fa-fw"></i>Pages</span>
+        <ul>
+          <li><a href="/guestbook/">Guestbook</a></li>
+        <li><a href="/about/">About</a></li>
+        </ul>
+    </li>
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-link fa-fw"></i>Friends</span>
+        <ul>
+          <li> <a href="http://resonlei.top" target="_blank">rongrong</a></li>
+        </ul>
+    </li>
+  </ul>
+  </nav>
+</div>
+
+<div class="gototop js-top">
+  <a href="#" class="js-gotop"><i class="fa fa-arrow-up"></i></a>
+</div>
+<script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.easing.min.js"></script>
+<script>
+(function () {
+	"use strict";
+	var goToTop = function() {
+		$(".js-gotop").on("click", function(event){
+			event.preventDefault();
+			$("html, body").animate({
+				scrollTop: $("html").offset().top
+			}, 500, "easeInOutExpo");
+			return false;
+		});
+		$(window).scroll(function(){
+			var $win = $(window);
+			if ($win.scrollTop() > 200) {
+				$(".js-top").addClass("active");
+			} else {
+				$(".js-top").removeClass("active");
+			}
+		});
+	};
+	$(function(){
+		goToTop();
+	});
+}());
+</script>
+
+
+</body>
+</html>
