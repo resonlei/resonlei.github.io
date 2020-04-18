@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="theme-color" content=#58b77a>
+  <title>Android使用WebView实现图片点击的监听 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <script id="hexo-configurations">
+  var CONFIG = {
+    root: '/',
+    theme: 'lx',
+    version: '0.3.9',
+    localsearch:{
+      "enable": false,
+      "trigger": "auto",
+      "top_n_per_article": 1,
+      "unescape": false,
+      "preload": false
+      },
+    path: 'null'
+  };
+</script>
+
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/css/main.min.css">
+  <style type="text/css">
+    pre,
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    html {
+      font-family: sans-serif;
+    }
+    body {
+      font-family: sans-serif;
+    }
+    h1, h2, h3, h4, h5, figure {
+      font-family: sans-serif;
+    }
+    .menu-container{
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script src="//cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.jside.menu.js"></script>
+	<script>
+	$(document).ready(function(){
+	$(".menu-container").jSideMenu({
+	    jSidePosition: "position-right",
+	    jSideSticky: true,
+	    jSideSkin: "greenish",
+	     });
+	}); 
+	</script>
+  
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Fira Code:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body>
+<div class="single">
+
+<div id="page">
+<div id="lx-aside" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/post_cover.jpeg)" data-stellar-background-ratio="0.5">
+  <div class="overlay">
+  <div class="page-title">
+    <div class="avatar"><a href="/"><img src="/images/avatar.jpeg"></a></div>
+    <span>2019-06-18</span>
+    <h2>Android使用Web...</h2>
+    <div class="tags"><i class="fa fa-tag"></i><a class="tag-link" href="/tags/webview-android/" rel="tag">webview android</a></div>
+    </div>
+</div>
+</div>
+
+<div id="lx-main-content">
+  <div class="lx-post">
+    <div class="lx-entry padding">
+      <div>
+        <h1 id="Android使用WebView实现图片点击的监听"><a href="#Android使用WebView实现图片点击的监听" class="headerlink" title="Android使用WebView实现图片点击的监听"></a>Android使用WebView实现图片点击的监听</h1><p>话不多说，直接进入主题。</p>
+<a id="more"></a>
+<h4 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h4><p>首先我们需要写一个监听事件的java类，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 图片的点击事件调用的方法</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">   <span class="class"><span class="keyword">class</span> <span class="title">ImageInterface</span> </span>&#123;</span><br><span class="line">       <span class="meta">@JavascriptInterface</span></span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onImageClick</span><span class="params">(String imgUrl)</span> </span>&#123;</span><br><span class="line">           Toast.makeText(MainActivity.<span class="keyword">this</span>, imgUrl, Toast.LENGTH_LONG).show();</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h4><p>这里需要对webview做一定的设置和处理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> WebView mWebView;</span><br><span class="line"><span class="keyword">private</span> WebSettings mWebSettings;</span><br><span class="line"></span><br><span class="line">mWebView = (WebView) findViewById(R.id.wv);</span><br><span class="line"><span class="comment">//获得webview的setting</span></span><br><span class="line">mWebSettings = mWebView.getSettings();</span><br><span class="line"><span class="comment">//设置对js的支持</span></span><br><span class="line">mWebSettings.setJavaScriptEnabled(<span class="keyword">true</span>);</span><br><span class="line"><span class="comment">//加载webview的内容</span></span><br><span class="line">mWebView.loadData(html+js,<span class="string">"text/html"</span>,<span class="string">"utf-8"</span>);</span><br><span class="line"><span class="comment">//最关键的方法，添加一个js的接口，第一个参数为对象，第二个可以理解为对象的名字，后面在js中可以直接使用这个去调用方法</span></span><br><span class="line">mWebView.addJavascriptInterface(<span class="keyword">new</span> ImageInterface(), <span class="string">"wv"</span>);</span><br></pre></td></tr></table></figure>
+<h4 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h4><p>要实现网页的内容能够被安卓监听到，那么我们要把第二步设置的接口在js里面表明：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> String js = <span class="string">"&lt;style&gt;img&#123;max-width:100%;height:auto;&#125; p&#123;line-height:150%;&#125;&lt;/style&gt;&lt;script&gt;var imgs=document.getElementsByTagName('img');for(var i=0;i&lt;imgs.length;i++)&#123;imgs[i].onclick=function()&#123;wv.onImageClick('click');alert('123');&#125;;&#125;&lt;/script&gt;"</span>;</span><br><span class="line">    <span class="keyword">private</span> String html = <span class="string">"&lt;img src='http://resonlei.top/photo/c.jpg'&gt;&lt;/img&gt;"</span>;</span><br></pre></td></tr></table></figure>
+<p>注意到上面的script里面，我获取了所有的img标签，并且为所有的img标签都设置了一个点击事件，</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">	<span class="keyword">var</span> imgs=<span class="built_in">document</span>.getElementsByTagName(<span class="string">'img'</span>);</span></span><br><span class="line"><span class="actionscript">	<span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;imgs.length;i++)&#123;</span></span><br><span class="line">	</span><br><span class="line"><span class="actionscript">		imgs[i].onclick=<span class="function"><span class="keyword">function</span><span class="params">()</span></span>&#123;</span></span><br><span class="line"><span class="actionscript">			wv.onImageClick(<span class="string">'click'</span>);<span class="comment">//这里就是代码的关键，表示调用java代码的这个方法</span></span></span><br><span class="line">		&#125;;</span><br><span class="line">	&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h3><p>好了，一共就是三个简单的步骤，就可以实现对于webview内容的监听，其他的监听也可以通过类似的方法去实现，不再赘述。这种方法就跟java里面的回调机制是一个思路，只不过一部分编程了其他的内容，不要忘记在java的方法中添加<code>@JavascriptInterface</code> 标记哦!</p>
+
+      </div>
+    </div>
+  </div>
+</div>
+<div class="lx-navigation">
+	<div class="lx-cover prev lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-l.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="/2020/04/18/%E9%80%9A%E8%BF%87adb%E6%A8%A1%E6%8B%9F%E5%BF%AB%E9%80%9F%E7%9A%84%E5%B1%8F%E5%B9%95%E7%82%B9%E5%87%BB-%E5%B0%8F%E7%B1%B3%E6%89%8B%E6%9C%BA%E4%BA%B2%E6%B5%8B%E6%9C%89%E6%95%88/">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Next</span>
+						<h3>通过adb模拟...</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+        <div class="lx-cover next lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-r.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="/2019/05/18/%E8%87%AA%E5%AE%9A%E4%B9%89%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90%E5%88%B0github-page/">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Prev</span>
+						<h3>自定义域名解析...</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+</div>
+
+</div>
+
+<footer>
+  <div>
+  Copyright &copy; 2019.<a href="/">Hexo</a><br>Powered by <a href="https://hexo.io" target="_blank">Hexo</a> | Theme <a href="https://lx.js.org" target="_blank">Lx</a><br>
+  </div>
+</footer>
+
+</div>
+
+<button class="hamburger hamburger--arrow-r" type="button">
+    <div class="hamburger-box">
+      <div class="hamburger-inner"></div>
+    </div>
+</button> 
+<div class="menu visibility">
+  <div class="menu-head">
+    <span class="layer">
+      <div class="col">
+        <div class="row for-pic">
+          <div class="profile-pic">
+            <a href="/"><img src="/images/avatar.jpeg" alt="John Doe"/></a>
+          </div>
+        </div>
+        <div class="row for-name">
+          <p>John Doe</p>
+          <span class="tagline">Hello, World!</span>
+        </div>
+      </div>
+    </span>
+  </div>
+  <nav class="menu-container">
+  <ul class="menu-items">
+    <li><a href="/"><i class="fa fa-home fa-fw"></i>Home</a></li>
+    <li><a href="/archives/"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+    
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-bookmark fa-fw"></i>Pages</span>
+        <ul>
+          <li><a href="/guestbook/">Guestbook</a></li>
+        <li><a href="/about/">About</a></li>
+        </ul>
+    </li>
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-link fa-fw"></i>Friends</span>
+        <ul>
+          <li> <a href="http://resonlei.top" target="_blank">rongrong</a></li>
+        </ul>
+    </li>
+  </ul>
+  </nav>
+</div>
+
+<div class="gototop js-top">
+  <a href="#" class="js-gotop"><i class="fa fa-arrow-up"></i></a>
+</div>
+<script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.easing.min.js"></script>
+<script>
+(function () {
+	"use strict";
+	var goToTop = function() {
+		$(".js-gotop").on("click", function(event){
+			event.preventDefault();
+			$("html, body").animate({
+				scrollTop: $("html").offset().top
+			}, 500, "easeInOutExpo");
+			return false;
+		});
+		$(window).scroll(function(){
+			var $win = $(window);
+			if ($win.scrollTop() > 200) {
+				$(".js-top").addClass("active");
+			} else {
+				$(".js-top").removeClass("active");
+			}
+		});
+	};
+	$(function(){
+		goToTop();
+	});
+}());
+</script>
+
+
+</body>
+</html>

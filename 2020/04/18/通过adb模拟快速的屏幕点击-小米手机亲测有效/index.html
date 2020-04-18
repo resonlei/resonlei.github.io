@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="theme-color" content=#58b77a>
+  <title>通过adb模拟快速的屏幕点击,小米手机亲测有效 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <script id="hexo-configurations">
+  var CONFIG = {
+    root: '/',
+    theme: 'lx',
+    version: '0.3.9',
+    localsearch:{
+      "enable": false,
+      "trigger": "auto",
+      "top_n_per_article": 1,
+      "unescape": false,
+      "preload": false
+      },
+    path: 'null'
+  };
+</script>
+
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/css/main.min.css">
+  <style type="text/css">
+    pre,
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    html {
+      font-family: sans-serif;
+    }
+    body {
+      font-family: sans-serif;
+    }
+    h1, h2, h3, h4, h5, figure {
+      font-family: sans-serif;
+    }
+    .menu-container{
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script src="//cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.jside.menu.js"></script>
+	<script>
+	$(document).ready(function(){
+	$(".menu-container").jSideMenu({
+	    jSidePosition: "position-right",
+	    jSideSticky: true,
+	    jSideSkin: "greenish",
+	     });
+	}); 
+	</script>
+  
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Fira Code:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body>
+<div class="single">
+
+<div id="page">
+<div id="lx-aside" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/post_cover.jpeg)" data-stellar-background-ratio="0.5">
+  <div class="overlay">
+  <div class="page-title">
+    <div class="avatar"><a href="/"><img src="/images/avatar.jpeg"></a></div>
+    <span>2020-04-18</span>
+    <h2>通过adb模拟快速的屏幕...</h2>
+    <div class="tags"><i class="fa fa-tag"></i><a class="tag-link" href="/tags/android-adb/" rel="tag">android adb</a></div>
+    </div>
+</div>
+</div>
+
+<div id="lx-main-content">
+  <div class="lx-post">
+    <div class="lx-entry padding">
+      <div>
+        <h1 id="通过adb模拟快速的屏幕点击"><a href="#通过adb模拟快速的屏幕点击" class="headerlink" title="通过adb模拟快速的屏幕点击"></a>通过adb模拟快速的屏幕点击</h1><p>想必当你看到这篇文章之前，你可能已经尝试了很多，用下面所说的这种方法：<br>我们都知道通过下面的命令可以模拟屏幕单击：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb shell input tap x y</span><br></pre></td></tr></table></figure>
+<p>但是发现在尝试了之后，手机的响应速度非常的慢，这显然不是我们想要的结果。<br>分析原因，这是因为adb是java环境的，发送到手机之后，系统在写入文件，然后响应事件，这一过程就显得很繁琐，你我们有没有什么办法去直接写入事件文件呢？</p>
+<a id="more"></a>
+<hr>
+<h3 id="下面开始讲重点，记好笔记，要考"><a href="#下面开始讲重点，记好笔记，要考" class="headerlink" title="下面开始讲重点，记好笔记，要考"></a>下面开始讲重点，记好笔记，要考</h3><ol>
+<li>进入<code>adb shell</code>命令行</li>
+<li>输入<code>getevent -l</code>进入event事件的监听，这个时候命令行会block住，然后你在屏幕点击你想要点击的位置，你会发现会打印如下的信息： <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"> &#x2F;dev&#x2F;input&#x2F;event1: EV_ABS       ABS_MT_TRACKING_ID   00000274            </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_KEY       BTN_TOUCH            DOWN                </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_KEY       BTN_TOOL_FINGER      DOWN                </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_ABS       ABS_MT_POSITION_X    0000025a            </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_ABS       ABS_MT_POSITION_Y    000005c3            </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_SYN       SYN_REPORT           00000000            </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_ABS       ABS_MT_TRACKING_ID   ffffffff            </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_KEY       BTN_TOUCH            UP                  </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_KEY       BTN_TOOL_FINGER      UP                  </span><br><span class="line">&#x2F;dev&#x2F;input&#x2F;event1: EV_SYN       SYN_REPORT           00000000</span><br></pre></td></tr></table></figure>
+<code>ABS_MT_POSITION_X</code> <code>ABS_MT_POSITION_Y</code>就是你点击的位置，都是16进制的。但是我们的重点不在这里，我们的重点是前面的路径，也就是<code>/dev/input/event1</code> ，这是系统的事件节点，同样我们可以的<code>input</code>目录下面发现很多这样的节点：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">130|vince:&#x2F; # ls &#x2F;dev&#x2F;input&#x2F;                                                   </span><br><span class="line">event0 event2 event4 event6 eventX mouse0 </span><br><span class="line">event1 event3 event5 event7 mice   mouse1</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>接下来我们把尝试把点击的事件文件记录下来，一开始我尝试下面的方法：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if&#x3D;&#x2F;dev&#x2F;input&#x2F;event1 of&#x3D;&#x2F;sdcard&#x2F;event1</span><br></pre></td></tr></table></figure>
+想通过这个方法来保存事件的信息，但是系统直接提示：意思就是没有数据写出，获得的文件是空白的，这很明显不行<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1|vince:&#x2F; # dd if&#x3D;&#x2F;dev&#x2F;input&#x2F;event1 of&#x3D;&#x2F;sdcard&#x2F;event1                          	</span><br><span class="line">^C0+2 records in</span><br><span class="line">0+0 records out</span><br><span class="line">0 bytes transferred in 2.376 secs (0 bytes&#x2F;sec)</span><br></pre></td></tr></table></figure></li>
+<li>然后我发现通过<code>cat</code>去打印event1，屏幕上面显示了一堆乱码，然后我机智的把这段乱码保存了起来：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat &#x2F;dev&#x2F;input&#x2F;event1 &gt; &#x2F;sdcard&#x2F;event1</span><br></pre></td></tr></table></figure>
+然后得到了一样的一行乱码<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">130|vince:&#x2F; # cat &#x2F;sdcard&#x2F;event1                                               </span><br><span class="line">?L?\g?9v?L?\g?J?L?\g?E?L?\g?5??L?\g?63?L?\g?1?L?\g??L?\N9?????L?\NJ?L?\NE?L?\Nvi</span><br></pre></td></tr></table></figure></li>
+<li>紧接着，把这个文件直接写入的event1<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if&#x3D;&#x2F;sdcard&#x2F;event1 of&#x3D;&#x2F;dev&#x2F;input&#x2F;event1</span><br></pre></td></tr></table></figure>
+终于有反应了，大功告成，最后写一个循环的脚本，就可以不断的点击了，nice～～<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">while : ; do dd if&#x3D;&#x2F;sdcard&#x2F;event1 of&#x3D;&#x2F;dev&#x2F;input&#x2F;event1 ; done</span><br></pre></td></tr></table></figure></li>
+</ol>
+</li>
+</ol>
+
+      </div>
+    </div>
+  </div>
+</div>
+<div class="lx-navigation">
+	<div class="lx-cover prev lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-l.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="#">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Next</span>
+						<h3>No newer post</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+        <div class="lx-cover next lx-cover-sm" style="background-image: url(//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/images/footer-r.jpeg)">
+		<div class="overlay"></div>
+		<a class="copy" href="/2019/06/18/Android%E4%BD%BF%E7%94%A8WebView%E5%AE%9E%E7%8E%B0%E5%9B%BE%E7%89%87%E7%82%B9%E5%87%BB%E7%9A%84%E7%9B%91%E5%90%AC/">
+			<div class="display-t">
+				<div class="display-tc">
+					<div>
+						<span>Prev</span>
+						<h3>Android...</h3>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+</div>
+
+</div>
+
+<footer>
+  <div>
+  Copyright &copy; 2019.<a href="/">Hexo</a><br>Powered by <a href="https://hexo.io" target="_blank">Hexo</a> | Theme <a href="https://lx.js.org" target="_blank">Lx</a><br>
+  </div>
+</footer>
+
+</div>
+
+<button class="hamburger hamburger--arrow-r" type="button">
+    <div class="hamburger-box">
+      <div class="hamburger-inner"></div>
+    </div>
+</button> 
+<div class="menu visibility">
+  <div class="menu-head">
+    <span class="layer">
+      <div class="col">
+        <div class="row for-pic">
+          <div class="profile-pic">
+            <a href="/"><img src="/images/avatar.jpeg" alt="John Doe"/></a>
+          </div>
+        </div>
+        <div class="row for-name">
+          <p>John Doe</p>
+          <span class="tagline">Hello, World!</span>
+        </div>
+      </div>
+    </span>
+  </div>
+  <nav class="menu-container">
+  <ul class="menu-items">
+    <li><a href="/"><i class="fa fa-home fa-fw"></i>Home</a></li>
+    <li><a href="/archives/"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+    
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-bookmark fa-fw"></i>Pages</span>
+        <ul>
+          <li><a href="/guestbook/">Guestbook</a></li>
+        <li><a href="/about/">About</a></li>
+        </ul>
+    </li>
+    <li class="has-sub"><span class="dropdown-heading">
+      <i class="fa fa-link fa-fw"></i>Friends</span>
+        <ul>
+          <li> <a href="http://resonlei.top" target="_blank">rongrong</a></li>
+        </ul>
+    </li>
+  </ul>
+  </nav>
+</div>
+
+<div class="gototop js-top">
+  <a href="#" class="js-gotop"><i class="fa fa-arrow-up"></i></a>
+</div>
+<script src="//cdn.jsdelivr.net/npm/theme-lx@0.3.9/source/js/jquery.easing.min.js"></script>
+<script>
+(function () {
+	"use strict";
+	var goToTop = function() {
+		$(".js-gotop").on("click", function(event){
+			event.preventDefault();
+			$("html, body").animate({
+				scrollTop: $("html").offset().top
+			}, 500, "easeInOutExpo");
+			return false;
+		});
+		$(window).scroll(function(){
+			var $win = $(window);
+			if ($win.scrollTop() > 200) {
+				$(".js-top").addClass("active");
+			} else {
+				$(".js-top").removeClass("active");
+			}
+		});
+	};
+	$(function(){
+		goToTop();
+	});
+}());
+</script>
+
+
+</body>
+</html>
